@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포켓몬 슬립 요리 계산기</title>
+    <style>
+        @font-face {
+          font-family: 'LINE Seed KR';
+          src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
+          font-weight: 400;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: 'LINE Seed KR';
+          src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+          font-weight: 700;
+          font-style: normal;
+        }
+
+        :root{
+          --ui:"LINE Seed KR",sans-serif;
+        }
+
+        body { 
+            font-family: var(--ui); 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f4f7f6; 
+        }
+
+        h1 { text-align: center; color: #2c3e50; font-size: 26px; margin-bottom: 30px; }
+        
+        .layout-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .left-panel { flex: 1; min-width: 300px; }
+        .right-panel { flex: 1.2; min-width: 300px; }
+
+        @media (max-width: 768px) {
+            .layout-container { flex-direction: column; }
+        }
+
+        .section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section-title { font-size: 18px; margin-top: 0; margin-bottom: 15px; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;}
+        
+        .type-select, .pot-input { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        
+        .ingredient-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+        .ingredient-item { display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; transition: 0.2s; padding: 5px; border-radius: 8px; }
+        .ingredient-item:hover { background: #f0f0f0; }
+        .ingredient-item label { font-size: 12px; margin-bottom: 5px; color: #555; word-break: keep-all; cursor: pointer; }
+        .ingredient-item input { width: 50px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 5px; cursor: text; }
+        
+        .ingredient-item.locked img, .ingredient-item.locked .icon-placeholder { filter: grayscale(100%) opacity(40%); }
+        .ingredient-item.locked label { text-decoration: line-through; color: #aaa; }
+        .ingredient-item.locked input { background-color: #eee; color: #aaa; pointer-events: none; }
+        .icon-placeholder { width: 40px; height: 40px; background-color: #e0e0e0; border-radius: 50%; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;}
+
+        .recipe-toggle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+        .recipe-toggle { padding: 8px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; font-size: 13px; text-align: center; transition: 0.2s; }
+        .recipe-toggle.discovered { background: #fdfae6; border-color: #f1c40f; color: #d35400; font-weight: bold; } 
+        .recipe-toggle.undiscovered { background: #eee; border-color: #ccc; color: #7f8c8d; } 
+        
+        .recipe { padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #ccc; background: #f9f9f9; position: relative;}
+        .can-make { border-left-color: #27ae60; background: #e8f8f5; }
+        .sunday-target { border-left-color: #9b59b6; background: #f4e8f9; }
+        .locked-recipe { border-left-color: #7f8c8d; background: #f2f2f2; opacity: 0.8; }
+        
+        .recipe-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px;}
+        .capacity-badge { font-size: 12px; background: #ddd; padding: 3px 8px; border-radius: 10px; font-weight: normal; }
+        .new-badge { font-size: 11px; background: #e74c3c; color: white; padding: 3px 6px; border-radius: 5px; margin-right: 5px; animation: pulse 1.5s infinite; }
+        
+        .ingredient-details { font-size: 13px; margin-top: 5px; line-height: 1.5; }
+        .locked-info { color: #7f8c8d; font-size: 13px; margin-top: 5px; font-weight: bold; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center; margin-bottom: 10px;">
+        <!-- 로고 이미지도 파일로 쓸 경우 로컬 경로로 변경 가능 -->
+        <h2 style="color: #2c3e50; margin:0;">Pokémon Sleep Recipe Calculator</h2>
+    </div>
+    
+    <h1>🍳 포켓몬 슬립 요리 계산기</h1>
+
+    <div class="layout-container">
+        
+        <div class="left-panel">
+            <div class="section">
+                <h3 class="section-title">1. 이번 주 요리 및 냄비 설정</h3>
+                <label style="font-size: 13px; font-weight: bold; color: #555;">요리 종류</label>
+                <select id="recipe-type" class="type-select" style="margin-bottom: 15px;" onchange="handleTypeChange()">
+                    <option value="카레/스튜">🍛 카레/스튜</option>
+                    <option value="샐러드">🥗 샐러드</option>
+                    <option value="드링크/디저트">🍮 드링크/디저트</option>
+                </select>
+
+                <label style="font-size: 13px; font-weight: bold; color: #555;">현재 냄비 용량</label>
+                <input type="number" id="pot-size" class="pot-input" value="33" min="15" oninput="saveData(); calculateRecipes();">
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">2. 요리 도감 <span style="font-size:12px; font-weight:normal; color:#7f8c8d;">(클릭해서 목표 설정)</span></h3>
+                <p style="font-size:12px; color:#555; margin-top:0;">노란색=이미 해금함 / 회색=아직 못 만듦(목표)</p>
+                <div id="recipe-toggle-container" class="recipe-toggle-grid"></div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">3. 내 재료 입력 <span style="font-size:12px; font-weight:normal; color:#7f8c8d;">(클릭 시 잠금)</span></h3>
+                <div id="ingredients-container" class="ingredient-grid"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="section" style="min-height: 500px;">
+                <h3 class="section-title" style="margin-bottom: 20px;">🍽️ 제작 가능 요리</h3>
+                <div id="results">계산 중...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const ALL_INGREDIENTS = [
+            "굵은대파", "풍미버섯", "특선에그", "따끈따끈감자", "특선사과", 
+            "불맛허브", "콩고기", "튼튼밀크", "달콤한꿀", "퓨어오일", 
+            "따뜻한생강", "숙면토마토", "릴랙스카카오", "맛있는꼬리", 
+            "연둣빛대두", "연둣빛옥수수", "각성원두", "묵직한호박", "반들반들아보카도"
+        ];
+
+        let lockedIngredients = {}; 
+        let recipeDiscovered = {}; 
+
+        // 💡 깃허브 업로드 시 깨지지 않도록 로컬 파일명(.webp 또는 .png)으로 매핑
+        const IMG_LINKS = {
+            "굵은대파": "굵은대파.png",
+            "풍미버섯": "풍미버섯.png", 
+            "특선에그": "특선에그.png", 
+            "따끈따끈감자": "따끈따끈감자.png",
+            "특선사과": "특선사과.png",
+            "불맛허브": "불맛허브.png",
+            "콩고기": "콩고기.png",
+            "튼튼밀크": "튼튼밀크.png", 
+            "달콤한꿀": "달콤한꿀.png", 
+            "퓨어오일": "퓨어오일.png", 
+            "따뜻한생강": "따뜻한생강.png", 
+            "숙면토마토": "숙면토마토.png", 
+            "릴랙스카카오": "릴랙스카카오.png", 
+            "맛있는꼬리": "맛있는꼬리.png", 
+            "연둣빛대두": "연둣빛대두.png", 
+            "연둣빛옥수수": "연둣빛옥수수.png", 
+            "각성원두": "각성원두.png", 
+            "묵직한호박": "묵직한호박.png", 
+            "반들반들아보카도": "반들반들아보카도.png"
+        };
+
+        const RECIPES = [
+            { name: "특선사과 카레", type: "카레/스튜", ingredients: { "특선사과": 7 } },
+            { name: "훈제 꼬리 카레", type: "카레/스튜", ingredients: { "맛있는꼬리": 8, "불맛허브": 25 } },
+            { name: "선파워 토마토 카레", type: "카레/스튜", ingredients: { "숙면토마토": 10, "불맛허브": 5, "특선에그": 8 } },
+            { name: "절대안깸 버터 카레", type: "카레/스튜", ingredients: { "따끈따끈감자": 18, "숙면토마토": 15, "릴랙스카카오": 12, "튼튼밀크": 10 } },
+            { name: "매운맛 파 듬뿍 카레", type: "카레/스튜", ingredients: { "굵은대파": 14, "따뜻한생강": 10, "불맛허브": 8 } },
+            { name: "버섯포자 카레", type: "카레/스튜", ingredients: { "풍미버섯": 14, "따끈따끈감자": 9 } },
+            { name: "부자유친 카레", type: "카레/스튜", ingredients: { "달콤한꿀": 12, "특선사과": 11, "따끈따끈감자": 4, "튼튼밀크": 8 } },
+            { name: "만복 치즈 햄버그 카레", type: "카레/스튜", ingredients: { "콩고기": 8, "튼튼밀크": 10 } },
+            { name: "따끈한 화이트 스튜", type: "카레/스튜", ingredients: { "따끈따끈감자": 8, "풍미버섯": 4, "튼튼밀크": 10 } },
+            { name: "단순 화이트 스튜", type: "카레/스튜", ingredients: { "튼튼밀크": 7 } },
+            { name: "콩 햄버그 카레", type: "카레/스튜", ingredients: { "콩고기": 7 } },
+            { name: "베이비 허니 카레", type: "카레/스튜", ingredients: { "달콤한꿀": 7 } },
+            { name: "닌자 카레", type: "카레/스튜", ingredients: { "연둣빛대두": 24, "콩고기": 9, "굵은대파": 12, "풍미버섯": 5 } },
+            { name: "가뭄 커틀릿 카레", type: "카레/스튜", ingredients: { "콩고기": 10, "퓨어오일": 5 } },
+            { name: "살살녹는 오므라이스 카레", type: "카레/스튜", ingredients: { "특선에그": 10, "숙면토마토": 6 } },
+            { name: "벌크업 콩 카레", type: "카레/스튜", ingredients: { "연둣빛대두": 12, "콩고기": 6, "불맛허브": 4, "특선에그": 4 } },
+            { name: "유연 콘 스튜", type: "카레/스튜", ingredients: { "연둣빛옥수수": 14, "튼튼밀크": 8, "따끈따끈감자": 8 } },
+            { name: "연옥 콘 키마 카레", type: "카레/스튜", ingredients: { "불맛허브": 27, "콩고기": 24, "연둣빛옥수수": 14, "따뜻한생강": 12 } },
+            { name: "잼잼펀치 매운맛 카레", type: "카레/스튜", ingredients: { "각성원두": 11, "불맛허브": 11, "달콤한꿀": 11 } },
+            { name: "잠재파워 스튜", type: "카레/스튜", ingredients: { "연둣빛대두": 28, "숙면토마토": 25, "풍미버섯": 23, "각성원두": 16 } },
+            { name: "풀베기 간장전골 카레", type: "카레/스튜", ingredients: { "굵은대파": 27, "콩고기": 26, "달콤한꿀": 26, "특선에그": 22 } },
+            { name: "역할 호바귀 스튜", type: "카레/스튜", ingredients: { "묵직한호박": 10, "콩고기": 16, "따끈따끈감자": 18, "풍미버섯": 25 } },
+            { name: "심록 아보카도 그라탱", type: "카레/스튜", ingredients: { "반들반들아보카도": 22, "따끈따끈감자": 20 } },
+
+            { name: "야돈 꼬리 페퍼 샐러드", type: "샐러드", ingredients: { "맛있는꼬리": 10, "불맛허브": 10, "퓨어오일": 15 } },
+            { name: "버섯포자 샐러드", type: "샐러드", ingredients: { "풍미버섯": 17, "숙면토마토": 8, "퓨어오일": 8 } },
+            { name: "눈치우기 샐러드", type: "샐러드", ingredients: { "튼튼밀크": 10, "콩고기": 6 } },
+            { name: "먹보 감자 샐러드", type: "샐러드", ingredients: { "따끈따끈감자": 14, "특선에그": 9, "콩고기": 7, "특선사과": 6 } },
+            { name: "촉촉한 두부 샐러드", type: "샐러드", ingredients: { "연둣빛대두": 15, "숙면토마토": 9 } },
+            { name: "엄청난힘 와일드 샐러드", type: "샐러드", ingredients: { "콩고기": 9, "따뜻한생강": 6, "특선에그": 5, "따끈따끈감자": 3 } },
+            { name: "콩햄 샐러드", type: "샐러드", ingredients: { "콩고기": 8 } },
+            { name: "숙면토마토 샐러드", type: "샐러드", ingredients: { "숙면토마토": 8 } },
+            { name: "튼튼 카프레제", type: "샐러드", ingredients: { "숙면토마토": 6, "튼튼밀크": 12, "퓨어오일": 5 } },
+            { name: "변덕쟁이 초코 미트 샐러드", type: "샐러드", ingredients: { "릴랙스카카오": 14, "콩고기": 9, "불맛허브": 17 } },
+            { name: "오버히트 샐러드", type: "샐러드", ingredients: { "따뜻한생강": 10, "숙면토마토": 8 } },
+            { name: "특선사과 샐러드", type: "샐러드", ingredients: { "특선사과": 8 } },
+            { name: "면역 파 샐러드", type: "샐러드", ingredients: { "굵은대파": 10, "따뜻한생강": 5 } },
+            { name: "헤롱헤롱사과 치즈 샐러드", type: "샐러드", ingredients: { "특선사과": 15, "튼튼밀크": 5, "퓨어오일": 3 } },
+            { name: "닌자 샐러드", type: "샐러드", ingredients: { "굵은대파": 15, "연둣빛대두": 19, "풍미버섯": 12, "따뜻한생강": 11 } },
+            { name: "열풍 두부 샐러드", type: "샐러드", ingredients: { "연둣빛대두": 10, "불맛허브": 6 } },
+            { name: "연둣빛 샐러드", type: "샐러드", ingredients: { "퓨어오일": 22, "연둣빛옥수수": 17, "숙면토마토": 14, "따끈따끈감자": 9 } },
+            { name: "명상 스위트 샐러드", type: "샐러드", ingredients: { "특선사과": 21, "달콤한꿀": 16, "연둣빛옥수수": 12 } },
+            { name: "마구찌르기 옥수수 샐러드", type: "샐러드", ingredients: { "연둣빛옥수수": 9, "퓨어오일": 8 } },
+            { name: "크로스촙 샐러드", type: "샐러드", ingredients: { "특선에그": 20, "콩고기": 15, "숙면토마토": 10 } },
+            { name: "오기 커피 샐러드", type: "샐러드", ingredients: { "각성원두": 28, "콩고기": 28, "퓨어오일": 22, "따끈따끈감자": 22 } },
+            { name: "꽃보라 미모사 샐러드", type: "샐러드", ingredients: { "특선에그": 25, "퓨어오일": 17, "따끈따끈감자": 15, "콩고기": 12 } },
+            { name: "사과산 요구르트 샐러드", type: "샐러드", ingredients: { "특선에그": 35, "특선사과": 28, "숙면토마토": 23, "튼튼밀크": 18 } },
+            { name: "깨어진 아보카도 샐러드", type: "샐러드", ingredients: { "반들반들아보카도": 14, "연둣빛대두": 18, "퓨어오일": 10 } },
+            { name: "땅고르기 과카몰리 칩스", type: "샐러드", ingredients: { "반들반들아보카도": 28, "연둣빛옥수수": 25, "불맛허브": 30, "연둣빛대두": 22 } },
+            { name: "큼직큼직 열탕 샐러드", type: "샐러드", ingredients: { "따끈따끈감자": 30, "연둣빛옥수수": 18, "묵직한호박": 20, "풍미버섯": 27 } },
+
+            { name: "숙성 달콤 감자", type: "드링크/디저트", ingredients: { "따끈따끈감자": 9, "튼튼밀크": 5 } },
+            { name: "불굴의 진저 쿠키", type: "드링크/디저트", ingredients: { "달콤한꿀": 14, "따뜻한생강": 12, "릴랙스카카오": 5, "특선에그": 4 } },
+            { name: "특선사과 주스", type: "드링크/디저트", ingredients: { "특선사과": 8 } },
+            { name: "수제 미네랄사이다", type: "드링크/디저트", ingredients: { "달콤한꿀": 9 } },
+            { name: "불꽃 생강차", type: "드링크/디저트", ingredients: { "따뜻한생강": 9, "특선사과": 7 } },
+            { name: "푸린의 푸딩 아라모드", type: "드링크/디저트", ingredients: { "달콤한꿀": 20, "특선에그": 15, "튼튼밀크": 10, "특선사과": 10 } },
+            { name: "악마의키스 후르츠오레", type: "드링크/디저트", ingredients: { "특선사과": 11, "튼튼밀크": 9, "달콤한꿀": 7, "릴랙스카카오": 8 } },
+            { name: "희망사항 애플파이", type: "드링크/디저트", ingredients: { "특선사과": 12, "튼튼밀크": 4 } },
+            { name: "네롤리 디톡스 티", type: "드링크/디저트", ingredients: { "따뜻한생강": 11, "특선사과": 15, "풍미버섯": 9 } },
+            { name: "달콤한향기 초코케이크", type: "드링크/디저트", ingredients: { "달콤한꿀": 9, "릴랙스카카오": 8, "튼튼밀크": 7 } },
+            { name: "튼튼 핫밀크", type: "드링크/디저트", ingredients: { "튼튼밀크": 7 } },
+            { name: "곡예 소이 케이크", type: "드링크/디저트", ingredients: { "특선에그": 8, "연둣빛대두": 7 } },
+            { name: "의욕 프로틴 스무디", type: "드링크/디저트", ingredients: { "연둣빛대두": 15, "릴랙스카카오": 8 } },
+            { name: "마이페이스 야채 주스", type: "드링크/디저트", ingredients: { "숙면토마토": 9, "특선사과": 7 } },
+            { name: "큰 말라사다", type: "드링크/디저트", ingredients: { "퓨어오일": 10, "튼튼밀크": 7, "달콤한꿀": 6 } },
+            { name: "천하장사 소이 도넛", type: "드링크/디저트", ingredients: { "퓨어오일": 12, "연둣빛대두": 16, "릴랙스카카오": 7 } },
+            { name: "대폭발 팝콘", type: "드링크/디저트", ingredients: { "연둣빛옥수수": 15, "퓨어오일": 14, "튼튼밀크": 7 } },
+            { name: "다과회 옥수수 스콘", type: "드링크/디저트", ingredients: { "특선사과": 20, "따뜻한생강": 20, "연둣빛옥수수": 18, "튼튼밀크": 9 } },
+            { name: "꽃잎댄스 초코 타르트", type: "드링크/디저트", ingredients: { "특선사과": 11, "릴랙스카카오": 11 } },
+            { name: "플라워기프트 마카롱", type: "드링크/디저트", ingredients: { "릴랙스카카오": 25, "특선에그": 25, "달콤한꿀": 17, "튼튼밀크": 10 } },
+            { name: "일찍기상 커피 젤리", type: "드링크/디저트", ingredients: { "각성원두": 16, "튼튼밀크": 14, "달콤한꿀": 12 } },
+            { name: "스파크 스파이스 콜라", type: "드링크/디저트", ingredients: { "특선사과": 35, "따뜻한생강": 20, "굵은대파": 20, "각성원두": 12 } },
+            { name: "틀깨기 콘 티라미수", type: "드링크/디저트", ingredients: { "각성원두": 14, "연둣빛옥수수": 14, "튼튼밀크": 12 } },
+            { name: "토오 에클레어", type: "드링크/디저트", ingredients: { "릴랙스카카오": 30, "튼튼밀크": 26, "각성원두": 24, "달콤한꿀": 22 } },
+            { name: "두근두근 겁나는얼굴 팬케이크", type: "드링크/디저트", ingredients: { "묵직한호박": 18, "특선에그": 24, "달콤한꿀": 32, "숙면토마토": 29 } },
+            { name: "그래스믹서 스무디", type: "드링크/디저트", ingredients: { "반들반들아보카도": 18, "숙면토마토": 16, "튼튼밀크": 14 } },
+            { name: "꿀모으기 초코 와플", type: "드링크/디저트", ingredients: { "달콤한꿀": 38, "연둣빛옥수수": 28, "퓨어오일": 28, "릴랙스카카오": 21 } }
+        ];
+
+        window.onload = function() {
+            loadData();
+
+            const container = document.getElementById('ingredients-container');
+            ALL_INGREDIENTS.forEach(ing => {
+                let imgTag = IMG_LINKS[ing] 
+                    ? `<img src="${IMG_LINKS[ing]}" alt="${ing}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                    : '';
+                
+                let placeholderStyle = IMG_LINKS[ing] ? 'display:none;' : 'display:flex;';
+
+                let isLockedClass = lockedIngredients[ing] ? 'locked' : '';
+
+                container.innerHTML += `
+                    <div class="ingredient-item ${isLockedClass}" id="item-${ing}" onclick="toggleIngredientLock('${ing}', event)">
+                        ${imgTag}
+                        <div class="icon-placeholder" style="${placeholderStyle} width:40px; height:40px; border-radius:50%; background:#e0e0e0; margin:0 auto 5px; align-items:center; justify-content:center; font-size:9px;">이미지<br>없음</div>
+                        <label>${ing}</label>
+                        <input type="number" id="ing-${ing}" value="0" min="0" onclick="event.stopPropagation();" oninput="saveData(); calculateRecipes();">
+                    </div>
+                `;
+            });
+
+            ALL_INGREDIENTS.forEach(ing => {
+                if(savedInventory[ing] !== undefined) {
+                    document.getElementById(`ing-${ing}`).value = savedInventory[ing];
+                }
+            });
+
+            handleTypeChange();
+        };
+
+        function saveData() {
+            let inventory = {};
+            ALL_INGREDIENTS.forEach(ing => {
+                inventory[ing] = document.getElementById(`ing-${ing}`).value;
+            });
+
+            const data = {
+                potSize: document.getElementById('pot-size').value,
+                recipeType: document.getElementById('recipe-type').value,
+                inventory: inventory,
+                lockedIngredients: lockedIngredients,
+                recipeDiscovered: recipeDiscovered
+            };
+
+            localStorage.setItem('pokemonSleepCalculatorData', JSON.stringify(data));
+        }
+
+        let savedInventory = {};
+
+        function loadData() {
+            const saved = localStorage.getItem('pokemonSleepCalculatorData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.potSize) document.getElementById('pot-size').value = data.potSize;
+                if (data.recipeType) document.getElementById('recipe-type').value = data.recipeType;
+                if (data.inventory) savedInventory = data.inventory;
+                if (data.lockedIngredients) lockedIngredients = data.lockedIngredients;
+                if (data.recipeDiscovered) recipeDiscovered = data.recipeDiscovered;
+            }
+            
+            RECIPES.forEach(r => {
+                if (recipeDiscovered[r.name] === undefined) {
+                    recipeDiscovered[r.name] = true;
+                }
+            });
+        }
+
+        function handleTypeChange() {
+            saveData(); 
+            const selectedType = document.getElementById('recipe-type').value;
+            const toggleContainer = document.getElementById('recipe-toggle-container');
+            
+            toggleContainer.innerHTML = ''; 
+
+            RECIPES.filter(r => r.type === selectedType).forEach(recipe => {
+                const isDiscovered = recipeDiscovered[recipe.name];
+                const btnClass = isDiscovered ? 'discovered' : 'undiscovered';
+                const icon = isDiscovered ? '✅' : '🔒';
+                
+                toggleContainer.innerHTML += `
+                    <div class="recipe-toggle ${btnClass}" onclick="toggleRecipeLock('${recipe.name}')" id="toggle-${recipe.name}">
+                        ${icon} ${recipe.name}
+                    </div>
+                `;
+            });
+
+            calculateRecipes(); 
+        }
+
+        function toggleRecipeLock(recipeName) {
+            recipeDiscovered[recipeName] = !recipeDiscovered[recipeName]; 
+            saveData(); 
+            handleTypeChange(); 
+        }
+
+        function toggleIngredientLock(ing, event) {
+            lockedIngredients[ing] = !lockedIngredients[ing];
+            
+            const itemElement = document.getElementById(`item-${ing}`);
+            const inputElement = document.getElementById(`ing-${ing}`);
+            
+            if (lockedIngredients[ing]) {
+                itemElement.classList.add('locked');
+                inputElement.value = "0"; 
+            } else {
+                itemElement.classList.remove('locked');
+            }
+            saveData(); 
+            calculateRecipes(); 
+        }
+
+        function calculateRecipes() {
+            const selectedType = document.getElementById('recipe-type').value;
+            const currentPotSize = parseInt(document.getElementById('pot-size').value) || 0;
+
+            let myInventory = {};
+            ALL_INGREDIENTS.forEach(ing => {
+                myInventory[ing] = parseInt(document.getElementById(`ing-${ing}`).value) || 0;
+            });
+
+            let resultsHTML = '';
+            let canMakeList = [];
+            let cannotMakeList = [];
+            let sundayTargetList = []; 
+            let impossibleList = []; 
+
+            RECIPES.filter(r => r.type === selectedType).forEach(recipe => {
+                let ingredientInfo = []; 
+                let totalMissing = 0;
+                let requiredCapacity = 0;
+                let hasLockedIngredient = false;
+                let lockedNames = [];
+
+                for (let [reqIng, reqAmount] of Object.entries(recipe.ingredients)) {
+                    requiredCapacity += reqAmount;
+                    let myAmount = myInventory[reqIng] || 0;
+                    
+                    if (lockedIngredients[reqIng]) {
+                        hasLockedIngredient = true;
+                        lockedNames.push(reqIng);
+                    }
+
+                    if (myAmount >= reqAmount) {
+                        ingredientInfo.push(`<span style="color: #27ae60;">✅ ${reqIng} (보유: ${myAmount} / 필요: ${reqAmount})</span>`);
+                    } else {
+                        let lack = reqAmount - myAmount;
+                        ingredientInfo.push(`<span style="color: #e74c3c;">❌ ${reqIng} ${lack}개 부족 (보유: ${myAmount} / 필요: ${reqAmount})</span>`);
+                        totalMissing += lack;
+                    }
+                }
+
+                const isNewTarget = !recipeDiscovered[recipe.name];
+                const recipeData = { ...recipe, ingredientInfo, totalMissing, requiredCapacity, lockedNames, isNewTarget };
+
+                if (hasLockedIngredient) {
+                    impossibleList.push(recipeData);
+                } 
+                else if (requiredCapacity <= currentPotSize) {
+                    if (totalMissing === 0) {
+                        canMakeList.push(recipeData);
+                    } else {
+                        cannotMakeList.push(recipeData);
+                    }
+                } 
+                else {
+                    sundayTargetList.push(recipeData);
+                }
+            });
+
+            cannotMakeList.sort((a, b) => {
+                if (a.isNewTarget !== b.isNewTarget) {
+                    return (b.isNewTarget ? 1 : 0) - (a.isNewTarget ? 1 : 0);
+                }
+                return a.totalMissing - b.totalMissing;
+            });
+
+            sundayTargetList.sort((a, b) => {
+                if (a.isNewTarget !== b.isNewTarget) {
+                    return (b.isNewTarget ? 1 : 0) - (a.isNewTarget ? 1 : 0);
+                }
+                return a.totalMissing - b.totalMissing;
+            });
+
+            if (canMakeList.length > 0) {
+                resultsHTML += `<h4 style="color:#27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 5px;">✨ 지금 바로 만들 수 있어요!</h4>`;
+                canMakeList.forEach(r => {
+                    let newBadge = r.isNewTarget ? `<span class="new-badge">🆕 도감 목표!</span>` : '';
+                    resultsHTML += `
+                        <div class="recipe can-make">
+                            <div class="recipe-title">
+                                <span>${newBadge}${r.name}</span>
+                                <span class="capacity-badge">용량: ${r.requiredCapacity}</span>
+                            </div>
+                            <div class="ingredient-details">${r.ingredientInfo.join("<br>")}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                resultsHTML += `<h4 style="color:#7f8c8d;">✨ 지금 바로 만들 수 있는 요리가 없습니다.</h4>`;
+            }
+
+            if (cannotMakeList.length > 0) {
+                resultsHTML += `<h4 style="margin-top:30px; border-bottom: 2px solid #ccc; padding-bottom: 5px;">🤔 재료를 더 모아보세요 (평일 가능)</h4>`;
+                cannotMakeList.forEach(r => {
+                    let newBadge = r.isNewTarget ? `<span class="new-badge">🆕 도감 목표!</span>` : '';
+                    resultsHTML += `
+                        <div class="recipe">
+                            <div class="recipe-title">
+                                <span>${newBadge}${r.name}</span>
+                                <span class="capacity-badge">용량: ${r.requiredCapacity}</span>
+                            </div>
+                            <div class="ingredient-details">${r.ingredientInfo.join("<br>")}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (sundayTargetList.length > 0) {
+                resultsHTML += `<h4 style="margin-top:30px; color:#8e44ad; border-bottom: 2px solid #8e44ad; padding-bottom: 5px;">🌟 일요일 대형 냄비 추천 목표!</h4>`;
+                sundayTargetList.forEach(r => {
+                    let newBadge = r.isNewTarget ? `<span class="new-badge">🆕 도감 목표!</span>` : '';
+                    resultsHTML += `
+                        <div class="recipe sunday-target">
+                            <div class="recipe-title">
+                                <span>${newBadge}${r.name}</span>
+                                <span class="capacity-badge">필요 용량: ${r.requiredCapacity}</span>
+                            </div>
+                            <div class="ingredient-details" style="margin-top:8px;">${r.ingredientInfo.join("<br>")}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (impossibleList.length > 0) {
+                resultsHTML += `<h4 style="margin-top:30px; color:#7f8c8d; border-bottom: 2px solid #ccc; padding-bottom: 5px;">🚨 미해금 재료가 포함된 요리 (제작 불가)</h4>`;
+                impossibleList.forEach(r => {
+                    let newBadge = r.isNewTarget ? `<span class="new-badge">🆕 도감 목표!</span>` : '';
+                    resultsHTML += `
+                        <div class="recipe locked-recipe">
+                            <div class="recipe-title" style="color: #555;">
+                                <span>${newBadge}${r.name}</span>
+                                <span class="capacity-badge">용량: ${r.requiredCapacity}</span>
+                            </div>
+                            <div class="locked-info">🔒 미해금 재료: ${r.lockedNames.join(", ")}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('results').innerHTML = resultsHTML;
+        }
+    </script>
+</body>
+</html>
