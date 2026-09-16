@@ -87,7 +87,7 @@
 <body>
 
     <div style="text-align: center; margin-bottom: 10px;">
-        <img src="images/포켓몬슬립_타이틀.png" alt="Pokémon Sleep" style="max-width: 260px; width: 60%; height: auto;">
+        <img src="https://raw.githubusercontent.com/gmle3510/PoSleep-recipe-calculator/main/images/%ED%8F%AC%EC%BC%93%EB%AA%AC%EC%8A%AC%EB%A6%BD_%ED%83%80%EC%9D%B4%ED%8B%80.png" alt="Pokémon Sleep" style="max-width: 260px; width: 60%; height: auto;">
     </div>
     
     <h1>🍳 포켓몬 슬립 요리 계산기</h1>
@@ -140,28 +140,34 @@
         let lockedIngredients = {}; 
         let recipeDiscovered = {}; 
 
-        // 💡 깃허브 업로드 시 깨지지 않도록 로컬 파일명(images/ 폴더, .webp)으로 매핑
-        const IMG_LINKS = {
-            "굵은대파": "images/굵은대파.webp",
-            "풍미버섯": "images/풍미버섯.webp",
-            "특선에그": "images/특선에그.webp",
-            "따끈따끈감자": "images/따끈따끈감자.webp",
-            "특선사과": "images/특선사과.webp",
-            "불맛허브": "images/불맛허브.webp",
-            "콩고기": "images/콩고기.webp",
-            "튼튼밀크": "images/튼튼밀크.webp",
-            "달콤한꿀": "images/달콤한꿀.webp",
-            "퓨어오일": "images/퓨어오일.webp",
-            "따뜻한생강": "images/따뜻한생강.webp",
-            "숙면토마토": "images/숙면토마토.webp",
-            "릴랙스카카오": "images/릴랙스카카오.webp",
-            "맛있는꼬리": "images/맛있는꼬리.webp",
-            "연둣빛대두": "images/연둣빛대두.webp",
-            "연둣빛옥수수": "images/연둣빛옥수수.webp",
-            "각성원두": "images/각성원두.webp",
-            "묵직한호박": "images/묵직한호박.webp",
-            "반들반들아보카도": "images/반들반들아보카도.webp"
+        // 💡 폰 등 로컬에서 index.html 하나만 열어도 깨지지 않도록,
+        //    GitHub 원본(raw) 이미지 주소를 직접 참조 (images 폴더 별도 다운로드 불필요)
+        const IMG_BASE = "https://raw.githubusercontent.com/gmle3510/PoSleep-recipe-calculator/main/images/";
+        const IMG_FILES = {
+            "굵은대파": "굵은대파.webp",
+            "풍미버섯": "풍미버섯.webp",
+            "특선에그": "특선에그.webp",
+            "따끈따끈감자": "따끈따끈감자.webp",
+            "특선사과": "특선사과.webp",
+            "불맛허브": "불맛허브.webp",
+            "콩고기": "콩고기.webp",
+            "튼튼밀크": "튼튼밀크.webp",
+            "달콤한꿀": "달콤한꿀.webp",
+            "퓨어오일": "퓨어오일.webp",
+            "따뜻한생강": "따뜻한생강.webp",
+            "숙면토마토": "숙면토마토.webp",
+            "릴랙스카카오": "릴랙스카카오.webp",
+            "맛있는꼬리": "맛있는꼬리.webp",
+            "연둣빛대두": "연둣빛대두.webp",
+            "연둣빛옥수수": "연둣빛옥수수.webp",
+            "각성원두": "각성원두.webp",
+            "묵직한호박": "묵직한호박.webp",
+            "반들반들아보카도": "반들반들아보카도.webp"
         };
+        const IMG_LINKS = {};
+        Object.keys(IMG_FILES).forEach(ing => {
+            IMG_LINKS[ing] = IMG_BASE + encodeURIComponent(IMG_FILES[ing]);
+        });
 
         const RECIPES = [
             { name: "특선사과 카레", type: "카레/스튜", ingredients: { "특선사과": 7 } },
