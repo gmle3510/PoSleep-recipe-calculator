@@ -87,8 +87,7 @@
 <body>
 
     <div style="text-align: center; margin-bottom: 10px;">
-        <!-- 로고 이미지도 파일로 쓸 경우 로컬 경로로 변경 가능 -->
-        <h2 style="color: #2c3e50; margin:0;">Pokémon Sleep Recipe Calculator</h2>
+        <img src="images/포켓몬슬립_타이틀.png" alt="Pokémon Sleep" style="max-width: 260px; width: 60%; height: auto;">
     </div>
     
     <h1>🍳 포켓몬 슬립 요리 계산기</h1>
@@ -141,27 +140,27 @@
         let lockedIngredients = {}; 
         let recipeDiscovered = {}; 
 
-        // 💡 깃허브 업로드 시 깨지지 않도록 로컬 파일명(.webp 또는 .png)으로 매핑
+        // 💡 깃허브 업로드 시 깨지지 않도록 로컬 파일명(images/ 폴더, .webp)으로 매핑
         const IMG_LINKS = {
-            "굵은대파": "굵은대파.png",
-            "풍미버섯": "풍미버섯.png", 
-            "특선에그": "특선에그.png", 
-            "따끈따끈감자": "따끈따끈감자.png",
-            "특선사과": "특선사과.png",
-            "불맛허브": "불맛허브.png",
-            "콩고기": "콩고기.png",
-            "튼튼밀크": "튼튼밀크.png", 
-            "달콤한꿀": "달콤한꿀.png", 
-            "퓨어오일": "퓨어오일.png", 
-            "따뜻한생강": "따뜻한생강.png", 
-            "숙면토마토": "숙면토마토.png", 
-            "릴랙스카카오": "릴랙스카카오.png", 
-            "맛있는꼬리": "맛있는꼬리.png", 
-            "연둣빛대두": "연둣빛대두.png", 
-            "연둣빛옥수수": "연둣빛옥수수.png", 
-            "각성원두": "각성원두.png", 
-            "묵직한호박": "묵직한호박.png", 
-            "반들반들아보카도": "반들반들아보카도.png"
+            "굵은대파": "images/굵은대파.webp",
+            "풍미버섯": "images/풍미버섯.webp",
+            "특선에그": "images/특선에그.webp",
+            "따끈따끈감자": "images/따끈따끈감자.webp",
+            "특선사과": "images/특선사과.webp",
+            "불맛허브": "images/불맛허브.webp",
+            "콩고기": "images/콩고기.webp",
+            "튼튼밀크": "images/튼튼밀크.webp",
+            "달콤한꿀": "images/달콤한꿀.webp",
+            "퓨어오일": "images/퓨어오일.webp",
+            "따뜻한생강": "images/따뜻한생강.webp",
+            "숙면토마토": "images/숙면토마토.webp",
+            "릴랙스카카오": "images/릴랙스카카오.webp",
+            "맛있는꼬리": "images/맛있는꼬리.webp",
+            "연둣빛대두": "images/연둣빛대두.webp",
+            "연둣빛옥수수": "images/연둣빛옥수수.webp",
+            "각성원두": "images/각성원두.webp",
+            "묵직한호박": "images/묵직한호박.webp",
+            "반들반들아보카도": "images/반들반들아보카도.webp"
         };
 
         const RECIPES = [
