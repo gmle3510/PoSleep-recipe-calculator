@@ -1,4 +1,4 @@
-# 🍳 포켓몬 슬립 요리 계산기 (PoSleep Recipe Calculator)
+# 🍳 포켓몬 슬립 요리 계산기 (Pokémon Sleep Recipe Calculator)
 
 포켓몬 슬립(Pokémon Sleep)의 요리 재료를 관리하고, 지금 보유한 재료로 만들 수 있는 요리를 자동으로 계산해주는 웹 계산기입니다.
 
